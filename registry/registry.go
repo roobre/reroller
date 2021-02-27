@@ -2,6 +2,7 @@ package registry
 
 import (
 	"errors"
+	"roob.re/reroller/registry/docker"
 	"strings"
 )
 
@@ -14,11 +15,14 @@ func ImageSHA(image string) (string, error) {
 
 	switch id.Registry {
 	case "docker.io":
-		infoFunc = DockerImageInfoFunc
+		infoFunc = docker.ImageInfo
 	}
 
 	return infoFunc(id.Name, id.Tag)
 }
+
+// ImageInfoFunc is able to provide the latest SHA of an image given its name and tag
+type ImageInfoFunc func(image, tag string) (string, error)
 
 type ImageDescriptor struct {
 	Registry string
@@ -57,6 +61,3 @@ func ParseImage(image string) ImageDescriptor {
 
 	return d
 }
-
-// ImageInfoFunc is able to provide the latest SHA of an image given its name and tag
-type ImageInfoFunc func(image, tag string) (string, error)

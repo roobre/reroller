@@ -1,4 +1,4 @@
-package registry
+package docker
 
 import (
 	"encoding/json"
@@ -6,10 +6,9 @@ import (
 	"net/http"
 )
 
-const dockerBaseURL = "https://registry.hub.docker.com/v2/repositories"
-
-func dockerImageInfoFunc(image, tag string) (string, error) {
-	resp, err := http.Get(fmt.Sprintf(dockerBaseURL+"/%s/tags/%s", image, tag))
+// Many registries implement docker-compatible API. This function will work for them, provided their base URL
+func DockerLikeImageInfo(baseurl, image, tag string) (string, error) {
+	resp, err := http.Get(fmt.Sprintf(baseurl+"/%s/tags/%s", image, tag))
 	if err != nil {
 		return "", err
 	}
@@ -34,5 +33,3 @@ func dockerImageInfoFunc(image, tag string) (string, error) {
 
 	return partialresponse.Images[0].Digest, nil
 }
-
-var DockerImageInfoFunc = ImageInfoFunc(dockerImageInfoFunc)
