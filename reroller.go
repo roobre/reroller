@@ -3,17 +3,18 @@ package reroller
 import (
 	"context"
 	"errors"
-	"fmt"
+	log "github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"log"
+	"roob.re/reroller/registry"
 	"strconv"
+	"strings"
 )
 
-const annotation = "reroller.roob.re/reroll"
+const rerollerAnnotation = "reroller.roob.re/reroll"
 
 type Reroller struct {
 	K8S         *kubernetes.Clientset
@@ -67,32 +68,36 @@ func (rr *Reroller) Run() {
 
 	for _, rollout := range rollouts {
 		if !rr.shouldReroll(rollout.Annotations()) {
-			log.Printf("%s is not annotated, skipping", rollout.Name())
+			log.Debugf("%s is not annotated, skipping", rollout.Name())
 			continue
 		}
 
 		if !rollout.HasAlwaysPullPolicy() {
-			log.Printf("%s does not have pullPolicy == Always, skipping", rollout.Name())
+			log.Debugf("%s does not have pullPolicy == Always, skipping", rollout.Name())
 			continue
 		}
 
 		statuses, err := rollout.ContainerStatuses()
 		if err != nil {
-			log.Printf("error getting container statuses: %v", err)
+			log.Errorf("error getting container statuses: %v", err)
 			continue
 		}
 
 		if rr.hasUpdate(statuses) {
 			log.Println("Restarting something")
-			//rollout.Restart()
+			err := rollout.Restart()
+			if err != nil {
+				log.Errorf("error restarting %s: %v", rollout.Name(), err)
+			}
 		}
 	}
 }
 
 func (rr *Reroller) deploymentRollouts() (rollouts []Rollout) {
+	log.Debugf("Fetching deployments in %s", rr.Namespace)
 	deployments, err := rr.K8S.AppsV1().Deployments(rr.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		log.Println(err.Error())
+		log.Errorf(err.Error())
 		return
 	}
 
@@ -106,13 +111,14 @@ func (rr *Reroller) deploymentRollouts() (rollouts []Rollout) {
 }
 
 func (rr *Reroller) daemonSetRollouts() (rollouts []Rollout) {
-	deployments, err := rr.K8S.AppsV1().DaemonSets(rr.Namespace).List(context.TODO(), metav1.ListOptions{})
+	log.Debugf("Fetching daemonSets in %s", rr.Namespace)
+	daemonSets, err := rr.K8S.AppsV1().DaemonSets(rr.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		log.Println(err.Error())
+		log.Errorf(err.Error())
 		return
 	}
 
-	for _, ds := range deployments.Items {
+	for _, ds := range daemonSets.Items {
 		if true {
 			rollouts = append(rollouts, DaemonSetRollout(rr.K8S, &ds))
 		}
@@ -122,7 +128,7 @@ func (rr *Reroller) daemonSetRollouts() (rollouts []Rollout) {
 }
 
 func (rr *Reroller) shouldReroll(annotations map[string]string) bool {
-	rawVal, found := annotations[annotation]
+	rawVal, found := annotations[rerollerAnnotation]
 	var val bool
 
 	if !found {
@@ -134,10 +140,26 @@ func (rr *Reroller) shouldReroll(annotations map[string]string) bool {
 	return val
 }
 
-// TODO
 func (rr *Reroller) hasUpdate(statuses []v1.ContainerStatus) bool {
 	for _, status := range statuses {
-		fmt.Printf("Checking update for %s:%s\n", status.Image, status.ImageID)
+		imagePieces := strings.Split(status.ImageID, "@")
+		if len(imagePieces) < 2 {
+			log.Errorf("malformed imageID '%s', skipping upgrade check", status.ImageID)
+			continue
+		}
+		digest := imagePieces[1]
+
+		upstreamDigest, err := registry.ImageSHA(status.Image)
+		if err != nil {
+			log.Errorf("could not fetch latest digest for %s: %v", status.Image, err)
+			continue
+		}
+
+		if digest != upstreamDigest {
+			return true
+		}
+
+		log.Debugf("no new digest found for %s", status.Image)
 	}
 
 	return false
