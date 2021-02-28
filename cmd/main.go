@@ -19,7 +19,7 @@ func main() {
 	unannotatedDefault, _ := strconv.ParseBool(os.ExpandEnv("REROLLER_UNANNOTATED"))
 	unannotated := flag.Bool("unannotated", unannotatedDefault, "process unannotated pods as well")
 	dryRun := flag.Bool("dry-run", false, "do not redeploy anything")
-	debuglvl := flag.String("debuglvl", "info", "debug level")
+	debuglvl := flag.String("debuglvl", os.ExpandEnv("REROLLER_DEBUG_LVL"), "debug level")
 	flag.Parse()
 
 	lvl, _ := log.ParseLevel(*debuglvl)
