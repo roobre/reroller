@@ -166,7 +166,7 @@ func (rr *Reroller) hasUpdate(statuses []v1.ContainerStatus) bool {
 
 		for _, ud := range upstreamDigests {
 			if digest != ud {
-				log.Println("New digest for %s found", status.Image)
+				log.Printf("New digest for %s found", status.Image)
 				return true
 			}
 		}
