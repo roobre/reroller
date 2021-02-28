@@ -13,9 +13,9 @@ import (
 
 type Rollout interface {
 	Name() string
+	Containers() []corev1.Container
 	ContainerStatuses() ([]corev1.ContainerStatus, error)
 	Annotations() map[string]string
-	HasAlwaysPullPolicy() bool
 	Restart() error
 }
 
@@ -55,8 +55,8 @@ func (dr *deploymentRollout) Annotations() map[string]string {
 	return dr.depl.Annotations
 }
 
-func (dr *deploymentRollout) HasAlwaysPullPolicy() bool {
-	return hasAlwaysPullPolicy(dr.depl.Spec.Template.Spec.Containers)
+func (dr *deploymentRollout) Containers() []corev1.Container {
+	return dr.depl.Spec.Template.Spec.Containers
 }
 
 func (dr *deploymentRollout) ContainerStatuses() ([]corev1.ContainerStatus, error) {
@@ -93,8 +93,8 @@ func (dsr *daemonSetRollout) Annotations() map[string]string {
 	return dsr.ds.Annotations
 }
 
-func (dsr *daemonSetRollout) HasAlwaysPullPolicy() bool {
-	return hasAlwaysPullPolicy(dsr.ds.Spec.Template.Spec.Containers)
+func (dsr *daemonSetRollout) Containers() []corev1.Container {
+	return dsr.ds.Spec.Template.Spec.Containers
 }
 
 func (dsr *daemonSetRollout) ContainerStatuses() ([]corev1.ContainerStatus, error) {
@@ -109,14 +109,4 @@ func (dsr *daemonSetRollout) Restart() (err error) {
 	dsr.ds, err = dsr.client.AppsV1().DaemonSets("").Update(context.TODO(), dsr.ds, metav1.UpdateOptions{})
 
 	return err
-}
-
-func hasAlwaysPullPolicy(containers []corev1.Container) bool {
-	for _, ct := range containers {
-		if ct.ImagePullPolicy == corev1.PullAlways {
-			return true
-		}
-	}
-
-	return false
 }

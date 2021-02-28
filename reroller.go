@@ -72,7 +72,7 @@ func (rr *Reroller) Run() {
 			continue
 		}
 
-		if !rollout.HasAlwaysPullPolicy() {
+		if !hasAlwaysPullPolicy(rollout.Containers()) {
 			log.Debugf("%s does not have pullPolicy == Always, skipping", rollout.Name())
 			continue
 		}
@@ -162,6 +162,16 @@ func (rr *Reroller) hasUpdate(statuses []v1.ContainerStatus) bool {
 		}
 
 		log.Debugf("no new digest found for %s", status.Image)
+	}
+
+	return false
+}
+
+func hasAlwaysPullPolicy(containers []v1.Container) bool {
+	for _, ct := range containers {
+		if ct.ImagePullPolicy == v1.PullAlways {
+			return true
+		}
 	}
 
 	return false
