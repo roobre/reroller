@@ -66,6 +66,8 @@ func (rr *Reroller) Run() {
 	rollouts = append(rollouts, rr.deploymentRollouts()...)
 	rollouts = append(rollouts, rr.daemonSetRollouts()...)
 
+	log.Debugf("%d rollouts to check in ns %s", len(rollouts), rr.Namespace)
+
 	for _, rollout := range rollouts {
 		if !rr.shouldReroll(rollout.Annotations()) {
 			log.Debugf("%s is not annotated, skipping", rollout.Name())

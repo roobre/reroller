@@ -3,6 +3,7 @@ package registry
 import (
 	"errors"
 	"roob.re/reroller/registry/docker"
+	"roob.re/reroller/registry/gcr"
 	"strings"
 )
 
@@ -15,7 +16,11 @@ func ImageDigests(image string) ([]string, error) {
 
 	switch id.Registry {
 	case "docker.io":
-		infoFunc = docker.ImageInfo
+		infoFunc = docker.DockerLikeImageInfo("https://registry.hub.docker.com/v2/repositories")
+	case "gcr.io":
+		fallthrough
+	case "k8s.gcr.io":
+		infoFunc = gcr.GCRLikeImageInfo("https://" + id.Registry + "/v2")
 	}
 
 	return infoFunc(id.Name, id.Tag)
