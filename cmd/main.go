@@ -15,7 +15,7 @@ func main() {
 	pflag.String("namespace", "", "namespaces to query (comma-separated)")
 	pflag.Bool("unannotated", false, "process unannotated rollouts")
 	pflag.Bool("dry-run", false, "do not actually reroll anything")
-	pflag.String("debuglvl", "", "debug level (verbosity)")
+	pflag.String("log-level", "info", "log level (verbosity)")
 	pflag.String("interval", "", "run every [interval], empty to run one. time.ParseDuration format")
 	pflag.Parse()
 
@@ -25,7 +25,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	lvl, _ := log.ParseLevel(viper.GetString("debuglvl"))
+	lvl, _ := log.ParseLevel(viper.GetString("log-level"))
 	log.SetLevel(lvl)
 
 	rr, err := reroller.NewWithKubeconfig(viper.GetString("kubeconfig"))
