@@ -1,37 +1,54 @@
 package main
 
 import (
-	"flag"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"os"
 	"path"
 	"roob.re/reroller"
-	"strconv"
+	"time"
 )
 
 func main() {
-	kubeconfig := flag.String(
-		"kubeconfig",
-		path.Join(os.ExpandEnv("$HOME"), ".kube", "config"),
-		"path to .kube/config, if running outside the cluster",
-	)
-	namespace := flag.String("namespace", os.ExpandEnv("REROLLER_NAMESPACE"), "Namespace, defaults to all")
-	unannotatedDefault, _ := strconv.ParseBool(os.ExpandEnv("REROLLER_UNANNOTATED"))
-	unannotated := flag.Bool("unannotated", unannotatedDefault, "process unannotated pods as well")
-	dryRun := flag.Bool("dry-run", false, "do not redeploy anything")
-	debuglvl := flag.String("debuglvl", os.ExpandEnv("REROLLER_DEBUG_LVL"), "debug level")
-	flag.Parse()
+	pflag.String("kubeconfig", path.Join(os.ExpandEnv("$HOME"), ".kube", "config"), "path to kubeconfig")
+	pflag.String("namespace", "", "namespaces to query (comma-separated)")
+	pflag.Bool("unannotated", false, "process unannotated rollouts")
+	pflag.Bool("dry-run", false, "do not actually reroll anything")
+	pflag.String("debuglvl", "", "debug level (verbosity)")
+	pflag.String("interval", "", "run every [interval], empty to run one. time.ParseDuration format")
+	pflag.Parse()
 
-	lvl, _ := log.ParseLevel(*debuglvl)
+	viper.SetEnvPrefix("REROLLER")
+	viper.AutomaticEnv()
+	if err := viper.BindPFlags(pflag.CommandLine); err != nil {
+		log.Fatal(err)
+	}
+
+	lvl, _ := log.ParseLevel(viper.GetString("debuglvl"))
 	log.SetLevel(lvl)
 
-	rr, err := reroller.NewWithKubeconfig(*kubeconfig)
+	rr, err := reroller.NewWithKubeconfig(viper.GetString("kubeconfig"))
 	if err != nil {
 		log.Fatal(err)
 	}
-	rr.Unannotated = *unannotated
-	rr.Namespace = *namespace
-	rr.DryRun = *dryRun
+	rr.Unannotated = viper.GetBool("unannotated")
+	rr.Namespace = viper.GetString("namespace")
+	rr.DryRun = viper.GetBool("dry-run")
 
-	rr.Run()
+	intervalStr := viper.GetString("interval")
+	if intervalStr == "" {
+		rr.Run()
+		return
+	}
+
+	interval, err := time.ParseDuration(intervalStr)
+	if err != nil {
+		log.Fatalf("error parsing interval: %v", err)
+	}
+
+	for {
+		rr.Run()
+		time.Sleep(interval)
+	}
 }
