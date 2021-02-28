@@ -20,6 +20,7 @@ type Reroller struct {
 	K8S         *kubernetes.Clientset
 	Namespace   string
 	Unannotated bool
+	DryRun      bool
 }
 
 func restConfig(kubeconfig string) (*rest.Config, error) {
@@ -86,7 +87,13 @@ func (rr *Reroller) Run() {
 		}
 
 		if rr.hasUpdate(statuses) {
-			log.Println("Restarting something")
+			log.Println("Restarting " + rollout.Name())
+
+			if rr.DryRun {
+				log.Println("dry-run: not actually restarting")
+				continue
+			}
+
 			err := rollout.Restart()
 			if err != nil {
 				log.Errorf("error restarting %s: %v", rollout.Name(), err)
@@ -146,24 +153,25 @@ func (rr *Reroller) hasUpdate(statuses []v1.ContainerStatus) bool {
 	for _, status := range statuses {
 		imagePieces := strings.Split(status.ImageID, "@")
 		if len(imagePieces) < 2 {
-			log.Errorf("malformed imageID '%s', skipping upgrade check", status.ImageID)
+			log.Errorf("Malformed imageID '%s', skipping upgrade check", status.ImageID)
 			continue
 		}
 		digest := imagePieces[1]
 
 		upstreamDigests, err := registry.ImageDigests(status.Image)
 		if err != nil {
-			log.Errorf("could not fetch latest digest for %s: %v", status.Image, err)
+			log.Errorf("Could not fetch latest digest for %s: %v", status.Image, err)
 			continue
 		}
 
 		for _, ud := range upstreamDigests {
 			if digest != ud {
+				log.Println("New digest for %s found", status.Image)
 				return true
 			}
 		}
 
-		log.Debugf("no new digest found for %s", status.Image)
+		log.Debugf("No new digest found for %s", status.Image)
 	}
 
 	return false

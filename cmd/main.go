@@ -18,6 +18,7 @@ func main() {
 	namespace := flag.String("namespace", os.ExpandEnv("REROLLER_NAMESPACE"), "Namespace, defaults to all")
 	unannotatedDefault, _ := strconv.ParseBool(os.ExpandEnv("REROLLER_UNANNOTATED"))
 	unannotated := flag.Bool("unannotated", unannotatedDefault, "process unannotated pods as well")
+	dryRun := flag.Bool("dry-run", false, "do not redeploy anything")
 	debuglvl := flag.String("debuglvl", "info", "debug level")
 	flag.Parse()
 
@@ -30,6 +31,7 @@ func main() {
 	}
 	rr.Unannotated = *unannotated
 	rr.Namespace = *namespace
+	rr.DryRun = *dryRun
 
 	rr.Run()
 }
