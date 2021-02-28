@@ -149,14 +149,16 @@ func (rr *Reroller) hasUpdate(statuses []v1.ContainerStatus) bool {
 		}
 		digest := imagePieces[1]
 
-		upstreamDigest, err := registry.ImageSHA(status.Image)
+		upstreamDigests, err := registry.ImageDigests(status.Image)
 		if err != nil {
 			log.Errorf("could not fetch latest digest for %s: %v", status.Image, err)
 			continue
 		}
 
-		if digest != upstreamDigest {
-			return true
+		for _, ud := range upstreamDigests {
+			if digest != ud {
+				return true
+			}
 		}
 
 		log.Debugf("no new digest found for %s", status.Image)

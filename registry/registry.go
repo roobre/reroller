@@ -6,11 +6,11 @@ import (
 	"strings"
 )
 
-func ImageSHA(image string) (string, error) {
+func ImageDigests(image string) ([]string, error) {
 	id := ParseImage(image)
 
-	infoFunc := ImageInfoFunc(func(image, tag string) (string, error) {
-		return "", errors.New("unknown registry for image " + image)
+	infoFunc := ImageInfoFunc(func(image, tag string) ([]string, error) {
+		return nil, errors.New("unknown registry for image " + image)
 	})
 
 	switch id.Registry {
@@ -22,7 +22,7 @@ func ImageSHA(image string) (string, error) {
 }
 
 // ImageInfoFunc is able to provide the latest SHA of an image given its name and tag
-type ImageInfoFunc func(image, tag string) (string, error)
+type ImageInfoFunc func(image, tag string) ([]string, error)
 
 type ImageDescriptor struct {
 	Registry string
