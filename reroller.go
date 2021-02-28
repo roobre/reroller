@@ -103,7 +103,7 @@ func (rr *Reroller) Run() {
 }
 
 func (rr *Reroller) deploymentRollouts() (rollouts []Rollout) {
-	log.Debugf("Fetching deployments in %s", rr.Namespace)
+	log.Debugf("Fetching deployments in ns %s", rr.Namespace)
 	deployments, err := rr.K8S.AppsV1().Deployments(rr.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		log.Errorf(err.Error())
@@ -112,7 +112,7 @@ func (rr *Reroller) deploymentRollouts() (rollouts []Rollout) {
 
 	for _, depl := range deployments.Items {
 		if depl.Status.AvailableReplicas > 0 {
-			rollouts = append(rollouts, DeploymentRollout(rr.K8S, &depl))
+			rollouts = append(rollouts, DeploymentRollout(rr.K8S, depl.DeepCopy()))
 		}
 	}
 
@@ -120,7 +120,7 @@ func (rr *Reroller) deploymentRollouts() (rollouts []Rollout) {
 }
 
 func (rr *Reroller) daemonSetRollouts() (rollouts []Rollout) {
-	log.Debugf("Fetching daemonSets in %s", rr.Namespace)
+	log.Debugf("Fetching daemonSets in ns %s", rr.Namespace)
 	daemonSets, err := rr.K8S.AppsV1().DaemonSets(rr.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		log.Errorf(err.Error())
@@ -129,7 +129,7 @@ func (rr *Reroller) daemonSetRollouts() (rollouts []Rollout) {
 
 	for _, ds := range daemonSets.Items {
 		if true {
-			rollouts = append(rollouts, DaemonSetRollout(rr.K8S, &ds))
+			rollouts = append(rollouts, DaemonSetRollout(rr.K8S, ds.DeepCopy()))
 		}
 	}
 
