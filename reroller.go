@@ -12,6 +12,7 @@ import (
 	"roob.re/reroller/registry"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const rerollerAnnotation = "reroller.roob.re/reroll"
@@ -21,6 +22,7 @@ type Reroller struct {
 	Namespace   string
 	Unannotated bool
 	DryRun      bool
+	Cooldown    time.Duration
 }
 
 func restConfig(kubeconfig string) (*rest.Config, error) {
@@ -70,13 +72,14 @@ func (rr *Reroller) Run() {
 	log.Debugf("%d rollouts to check in ns %s", len(rollouts), rr.Namespace)
 
 	for _, rollout := range rollouts {
+		log.Debugf("considering %s", rollout.Name())
 		if !rr.shouldReroll(rollout.Annotations()) {
-			log.Debugf("%s is not annotated, skipping", rollout.Name())
+			log.Tracef("%s is not annotated, skipping", rollout.Name())
 			continue
 		}
 
 		if !hasAlwaysPullPolicy(rollout.Containers()) {
-			log.Debugf("%s does not have pullPolicy == Always, skipping", rollout.Name())
+			log.Tracef("%s does not have pullPolicy == Always, skipping", rollout.Name())
 			continue
 		}
 
@@ -146,7 +149,31 @@ func (rr *Reroller) shouldReroll(annotations map[string]string) bool {
 		val, _ = strconv.ParseBool(rawVal)
 	}
 
-	return val
+	// If annotation says don't restart, return that
+	if !val {
+		return false
+	}
+
+	// Check when was last restart
+	lastRestartedStr, redeployed := annotations[restartedAtAnnotation]
+	if !redeployed {
+		// If never redeployed, green light
+		log.Tracef("rollout was never redeployed, ok to continue")
+		return true
+	}
+	lastRestarted, err := time.Parse(time.RFC3339, lastRestartedStr)
+	if err != nil {
+		log.Warn("error parsing last restart time, ignoring")
+		return true
+	}
+
+	if time.Since(lastRestarted) < rr.Cooldown {
+		// Don't redeoploy if last time is not above threshold
+		log.Warnf("last redeploy was %v ago (<%v), skipping", lastRestarted, rr.Cooldown)
+		return false
+	}
+
+	return true
 }
 
 func hasUpdate(statuses []v1.ContainerStatus) bool {

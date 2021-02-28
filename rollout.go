@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+const restartedAtAnnotation = "kubectl.kubernetes.io/restartedAt"
+
 type Rollout interface {
 	Name() string
 	Containers() []corev1.Container
@@ -67,7 +69,7 @@ func (dr *deploymentRollout) Restart() (err error) {
 	log.Println("Redeploying " + dr.Name())
 	return nil
 
-	dr.depl.Spec.Template.ObjectMeta.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
+	dr.depl.Spec.Template.ObjectMeta.Annotations[restartedAtAnnotation] = time.Now().Format(time.RFC3339)
 	dr.depl, err = dr.client.AppsV1().Deployments("").Update(context.TODO(), dr.depl, metav1.UpdateOptions{})
 
 	return err
@@ -105,7 +107,7 @@ func (dsr *daemonSetRollout) Restart() (err error) {
 	log.Println("Redeploying " + dsr.Name())
 	return nil
 
-	dsr.ds.Spec.Template.ObjectMeta.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
+	dsr.ds.Spec.Template.ObjectMeta.Annotations[restartedAtAnnotation] = time.Now().Format(time.RFC3339)
 	dsr.ds, err = dsr.client.AppsV1().DaemonSets("").Update(context.TODO(), dsr.ds, metav1.UpdateOptions{})
 
 	return err

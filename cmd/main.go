@@ -16,7 +16,8 @@ func main() {
 	pflag.Bool("unannotated", false, "process unannotated rollouts")
 	pflag.Bool("dry-run", false, "do not actually reroll anything")
 	pflag.String("log-level", "info", "log level (verbosity)")
-	pflag.String("interval", "", "run every [interval], empty to run one. time.ParseDuration format")
+	pflag.Duration("interval", 0, "run every [interval], empty to run one. time.ParseDuration format")
+	pflag.Duration("cooldown", time.Hour, "do not re-deploy more often than this. time.ParseDuration format")
 	pflag.Parse()
 
 	viper.SetEnvPrefix("REROLLER")
@@ -35,16 +36,12 @@ func main() {
 	rr.Unannotated = viper.GetBool("unannotated")
 	rr.Namespace = viper.GetString("namespace")
 	rr.DryRun = viper.GetBool("dry-run")
+	rr.Cooldown = viper.GetDuration("cooldown")
 
-	intervalStr := viper.GetString("interval")
-	if intervalStr == "" {
+	interval := viper.GetDuration("interval")
+	if interval == 0 {
 		rr.Run()
 		return
-	}
-
-	interval, err := time.ParseDuration(intervalStr)
-	if err != nil {
-		log.Fatalf("error parsing interval: %v", err)
 	}
 
 	for {
