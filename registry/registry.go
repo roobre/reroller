@@ -6,6 +6,7 @@ import (
 	"roob.re/reroller/registry/docker"
 	"roob.re/reroller/registry/gcr"
 	"roob.re/reroller/registry/ghcr"
+	"roob.re/reroller/registry/quay"
 	"strings"
 )
 
@@ -23,6 +24,8 @@ func ImageDigests(image string) ([]string, error) {
 		ghu := viper.GetString("github_user")
 		ghp := viper.GetString("github_token")
 		infoFunc = ghcr.GHCRLikeImageInfo("https://ghcr.io/v2", ghu, ghp)
+	case "quay.io":
+		infoFunc = quay.QuayLikeImageInfo("https://quay.io/api/v1/repository")
 	case "gcr.io":
 		fallthrough
 	case "k8s.gcr.io":
