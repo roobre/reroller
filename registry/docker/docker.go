@@ -3,8 +3,6 @@ package docker
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
-	"io/ioutil"
 	"net/http"
 	"strings"
 )
@@ -17,8 +15,6 @@ func DockerLikeImageInfo(baseUrl string) func(image, tag string) ([]string, erro
 		}
 
 		if resp.StatusCode >= 400 {
-			log.Debug(fmt.Sprintf(baseUrl+"/%s/tags/%s", image, tag))
-			log.Debug(ioutil.ReadAll(resp.Body))
 			return nil, fmt.Errorf("docker API returned %d", resp.StatusCode)
 		}
 
@@ -33,7 +29,7 @@ func DockerLikeImageInfo(baseUrl string) func(image, tag string) ([]string, erro
 		}
 
 		if len(partialresponse.Images) < 1 {
-			return nil, fmt.Errorf("docker API returned %d", resp.StatusCode)
+			return nil, fmt.Errorf("docker API did not return any image")
 		}
 
 		digests := make([]string, len(partialresponse.Images))

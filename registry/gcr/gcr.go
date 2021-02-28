@@ -3,7 +3,6 @@ package gcr
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 )
@@ -16,7 +15,6 @@ func GCRLikeImageInfo(baseUrl string) func(image, tag string) ([]string, error) 
 		}
 
 		if resp.StatusCode >= 400 {
-			log.Debug(fmt.Sprintf(baseUrl+"/%s/tags/list", image))
 			return nil, fmt.Errorf("gcr API returned %d", resp.StatusCode)
 		}
 

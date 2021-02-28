@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	log "github.com/sirupsen/logrus"
-	"io/ioutil"
 	"net/http"
 	"strings"
 )
@@ -24,9 +23,7 @@ func GHCRLikeImageInfo(baseUrl, user, password string) func(image, tag string) (
 		}
 
 		if resp.StatusCode >= 400 {
-			log.Debug(fmt.Sprintf(baseUrl+"/%s/tags/%s", image, tag))
-			log.Debug(ioutil.ReadAll(resp.Body))
-			return nil, fmt.Errorf("docker API returned %d", resp.StatusCode)
+			return nil, fmt.Errorf("ghcr API returned %d", resp.StatusCode)
 		}
 
 		var partialresponse struct {
