@@ -86,7 +86,7 @@ func (rr *Reroller) Run() {
 			continue
 		}
 
-		if rr.hasUpdate(statuses) {
+		if hasUpdate(statuses) {
 			log.Println("Restarting " + rollout.Name())
 
 			if rr.DryRun {
@@ -149,7 +149,7 @@ func (rr *Reroller) shouldReroll(annotations map[string]string) bool {
 	return val
 }
 
-func (rr *Reroller) hasUpdate(statuses []v1.ContainerStatus) bool {
+func hasUpdate(statuses []v1.ContainerStatus) bool {
 	for _, status := range statuses {
 		imagePieces := strings.Split(status.ImageID, "@")
 		if len(imagePieces) < 2 {
