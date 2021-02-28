@@ -165,8 +165,14 @@ func hasUpdate(statuses []v1.ContainerStatus) bool {
 		}
 
 		for _, ud := range upstreamDigests {
-			if digest != ud {
-				log.Printf("New digest for %s found", status.Image)
+			found := false
+			if digest == ud {
+				found = true
+				break
+			}
+
+			if !found {
+				log.Tracef("%s not found un upstream manifest list %v", digest, upstreamDigests)
 				return true
 			}
 		}
