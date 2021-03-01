@@ -31,10 +31,8 @@ spec:
             - name: REROLLER_NAMESPACE
               value: "c-newrelic" # Restrict to this namespace
             - name: REROLLER_INTERVAL
-              value: "3m"
+              value: 1h
             - name: REROLLER_UNANNOTATED
-              value: "true"
-            - name: REROLLER_DRY_RUN
               value: "true"
             - name: REROLLER_LOG_LEVEL
               value: "debug"
