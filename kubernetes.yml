@@ -34,7 +34,7 @@ spec:
               value: "30m"
             - name: REROLLER_DRY_RUN
               value: "true"
-            - name: REROLLER_LOG_LVL
+            - name: REROLLER_LOG_LEVEL
               value: "debug"
           resources:
             requests:
@@ -49,7 +49,7 @@ kind: ClusterRole
 metadata:
   name: reroller-role
 rules:
-  - apiGroups: [""]
+  - apiGroups: [ apps ]
     resources:
       - deployments
       - daemonsets
