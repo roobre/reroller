@@ -1,4 +1,12 @@
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: reroller-sa
+  namespace: c-reroller
+  labels:
+    app: reroller
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,6 +27,15 @@ spec:
         - name: reroller
           image: roobre/reroller:latest
           imagePullPolicy: Always
+          env:
+            - name: REROLLER_NAMESPACE
+              value: "c-newrelic" # Restrict to this namespace
+            - name: REROLLER_INTERVAL
+              value: "30m"
+            - name: REROLLER_DRY_RUN
+              value: "true"
+            - name: REROLLER_LOG_LVL
+              value: "debug"
           resources:
             requests:
               cpu: 10m
@@ -45,7 +62,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: reroller-sa
-    apiGroup: rbac.authorization.k8s.io
+    namespace: c-reroller
 roleRef:
   kind: ClusterRole
   name: reroller-role
