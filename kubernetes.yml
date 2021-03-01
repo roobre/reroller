@@ -31,7 +31,9 @@ spec:
             - name: REROLLER_NAMESPACE
               value: "c-newrelic" # Restrict to this namespace
             - name: REROLLER_INTERVAL
-              value: "30m"
+              value: "3m"
+            - name: REROLLER_UNANNOTATED
+              value: "true"
             - name: REROLLER_DRY_RUN
               value: "true"
             - name: REROLLER_LOG_LEVEL
@@ -54,6 +56,10 @@ rules:
       - deployments
       - daemonsets
     verbs: [get, list, update]
+  - apiGroups: [""]
+    resources:
+      - pods
+    verbs: [ get, list ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
