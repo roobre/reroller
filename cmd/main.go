@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"roob.re/reroller"
+	"strings"
 	"time"
 )
 
@@ -20,6 +21,7 @@ func main() {
 	pflag.Duration("cooldown", time.Hour, "do not re-deploy more often than this. time.ParseDuration format")
 	pflag.Parse()
 
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viper.SetEnvPrefix("REROLLER")
 	viper.AutomaticEnv()
 	if err := viper.BindPFlags(pflag.CommandLine); err != nil {
