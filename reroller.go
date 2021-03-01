@@ -72,14 +72,14 @@ func (rr *Reroller) Run() {
 	log.Debugf("%d rollouts to check in ns %s", len(rollouts), rr.Namespace)
 
 	for _, rollout := range rollouts {
-		log.Debugf("considering %s", rollout.Name())
+		log.Tracef("considering %s", rollout.Name())
 		if !rr.shouldReroll(rollout.Annotations()) {
-			log.Tracef("%s is not annotated, skipping", rollout.Name())
+			log.Debugf("%s is not annotated, skipping", rollout.Name())
 			continue
 		}
 
 		if !hasAlwaysPullPolicy(rollout.Containers()) {
-			log.Tracef("%s does not have pullPolicy == Always, skipping", rollout.Name())
+			log.Debugf("%s does not have pullPolicy == Always, skipping", rollout.Name())
 			continue
 		}
 
