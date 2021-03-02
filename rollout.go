@@ -68,6 +68,9 @@ func (dr *deploymentRollout) ContainerStatuses() ([]corev1.ContainerStatus, erro
 func (dr *deploymentRollout) Restart() (err error) {
 	log.Println("Redeploying " + dr.Name())
 
+	if dr.depl.Spec.Template.ObjectMeta.Annotations == nil {
+		dr.depl.Spec.Template.ObjectMeta.Annotations = map[string]string{}
+	}
 	dr.depl.Spec.Template.ObjectMeta.Annotations[restartedAtAnnotation] = time.Now().Format(time.RFC3339)
 	dr.depl, err = dr.client.AppsV1().Deployments("").Update(context.TODO(), dr.depl, metav1.UpdateOptions{})
 
@@ -105,6 +108,9 @@ func (dsr *daemonSetRollout) ContainerStatuses() ([]corev1.ContainerStatus, erro
 func (dsr *daemonSetRollout) Restart() (err error) {
 	log.Println("Redeploying " + dsr.Name())
 
+	if dsr.ds.Spec.Template.ObjectMeta.Annotations == nil {
+		dsr.ds.Spec.Template.ObjectMeta.Annotations = map[string]string{}
+	}
 	dsr.ds.Spec.Template.ObjectMeta.Annotations[restartedAtAnnotation] = time.Now().Format(time.RFC3339)
 	dsr.ds, err = dsr.client.AppsV1().DaemonSets("").Update(context.TODO(), dsr.ds, metav1.UpdateOptions{})
 
