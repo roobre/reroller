@@ -1,0 +1,73 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: reroller-sa
+  namespace: c-reroller
+  labels:
+    app: reroller
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reroller
+  namespace: c-reroller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reroller
+  template:
+    metadata:
+      labels:
+        app: reroller
+    spec:
+      serviceAccountName: reroller-sa
+      containers:
+        - name: reroller
+          image: roobre/reroller:latest
+          imagePullPolicy: Always
+          env:
+            - name: REROLLER_NAMESPACE
+              value: "c-newrelic" # Restrict to this namespace
+            - name: REROLLER_INTERVAL
+              value: 1h
+            - name: REROLLER_UNANNOTATED
+              value: "true"
+            - name: REROLLER_LOG_LEVEL
+              value: "debug"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32M
+            limits:
+              cpu: 200m
+              memory: 128M
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: reroller-role
+rules:
+  - apiGroups: [ apps ]
+    resources:
+      - deployments
+      - daemonsets
+    verbs: [get, list, update]
+  - apiGroups: [""]
+    resources:
+      - pods
+    verbs: [ get, list ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: read-reroller-role
+subjects:
+  - kind: ServiceAccount
+    name: reroller-sa
+    namespace: c-reroller
+roleRef:
+  kind: ClusterRole
+  name: reroller-role
+  apiGroup: rbac.authorization.k8s.io
