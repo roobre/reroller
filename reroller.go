@@ -23,6 +23,7 @@ type Reroller struct {
 	Unannotated bool
 	DryRun      bool
 	Cooldown    time.Duration
+	Registry    func(image string) ([]string, error)
 }
 
 func restConfig(kubeconfig string) (*rest.Config, error) {
@@ -48,7 +49,10 @@ func New() (*Reroller, error) {
 }
 
 func NewWithKubeconfig(kubeconfig string) (*Reroller, error) {
-	rr := &Reroller{}
+	rr := &Reroller{
+		Registry: registry.ImageDigests,
+	}
+
 	// creates the in-cluster config
 	config, err := restConfig(kubeconfig)
 	if err != nil {
@@ -89,7 +93,7 @@ func (rr *Reroller) Run() {
 			continue
 		}
 
-		if hasUpdate(statuses) {
+		if rr.hasUpdate(statuses) {
 			log.Println("Restarting " + rollout.Name())
 
 			if rr.DryRun {
@@ -176,7 +180,7 @@ func (rr *Reroller) shouldReroll(annotations map[string]string) bool {
 	return true
 }
 
-func hasUpdate(statuses []v1.ContainerStatus) bool {
+func (rr *Reroller) hasUpdate(statuses []v1.ContainerStatus) bool {
 	for _, status := range statuses {
 		imagePieces := strings.Split(status.ImageID, "@")
 		if len(imagePieces) < 2 {
@@ -185,7 +189,7 @@ func hasUpdate(statuses []v1.ContainerStatus) bool {
 		}
 		digest := imagePieces[1]
 
-		upstreamDigests, err := registry.ImageDigests(status.Image)
+		upstreamDigests, err := rr.Registry(status.Image)
 		if err != nil {
 			log.Errorf("Could not fetch latest digest for %s: %v", status.Image, err)
 			continue
