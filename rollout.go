@@ -2,7 +2,6 @@ package reroller
 
 import (
 	"context"
-	log "github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,7 +49,7 @@ type deploymentRollout struct {
 }
 
 func (dr *deploymentRollout) Name() string {
-	return "deployment.apps/" + dr.depl.Name
+	return "deployment " + dr.depl.Namespace + "/" + dr.depl.Name
 }
 
 func (dr *deploymentRollout) Annotations() map[string]string {
@@ -66,8 +65,6 @@ func (dr *deploymentRollout) ContainerStatuses() ([]corev1.ContainerStatus, erro
 }
 
 func (dr *deploymentRollout) Restart() (err error) {
-	log.Println("Redeploying " + dr.Name())
-
 	if dr.depl.Spec.Template.ObjectMeta.Annotations == nil {
 		dr.depl.Spec.Template.ObjectMeta.Annotations = map[string]string{}
 	}
@@ -90,7 +87,7 @@ type daemonSetRollout struct {
 }
 
 func (dsr *daemonSetRollout) Name() string {
-	return "daemonSet/" + dsr.ds.Name
+	return "daemonSet " + dsr.ds.Namespace + "/" + dsr.ds.Name
 }
 
 func (dsr *daemonSetRollout) Annotations() map[string]string {
@@ -106,8 +103,6 @@ func (dsr *daemonSetRollout) ContainerStatuses() ([]corev1.ContainerStatus, erro
 }
 
 func (dsr *daemonSetRollout) Restart() (err error) {
-	log.Println("Redeploying " + dsr.Name())
-
 	if dsr.ds.Spec.Template.ObjectMeta.Annotations == nil {
 		dsr.ds.Spec.Template.ObjectMeta.Annotations = map[string]string{}
 	}
