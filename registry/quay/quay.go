@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+const (
+	Registry = "quay.io"
+	BaseUrl  = "https://quay.io/api/v1/repository"
+)
+
 func QuayLikeImageInfo(baseUrl string) func(image, tag string) ([]string, error) {
 	return func(image, tag string) ([]string, error) {
 		resp, err := http.Get(fmt.Sprintf(strings.Trim(baseUrl, "/")+"/%s/tag/?specificTag=%s", image, tag))

@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+const (
+	Registry = "gcr.io"
+	BaseUrl  = "https://gcr.io/v2"
+)
+
 func GCRLikeImageInfo(baseUrl string) func(image, tag string) ([]string, error) {
 	return func(image, tag string) ([]string, error) {
 		resp, err := http.Get(fmt.Sprintf(strings.Trim(baseUrl, "/")+"/%s/tags/list", image))

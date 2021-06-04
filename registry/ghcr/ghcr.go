@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+const (
+	Registry = "ghcr.io"
+	BaseUrl  = "https://ghcr.io/v2"
+)
+
 func GHCRLikeImageInfo(baseUrl, user, password string) func(image, tag string) ([]string, error) {
 	return func(image, tag string) ([]string, error) {
 		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(strings.Trim(baseUrl, "/")+"/%s/manifests/%s", image, tag), nil)

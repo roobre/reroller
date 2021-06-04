@@ -18,15 +18,15 @@ func ImageDigests(image string) ([]string, error) {
 	})
 
 	switch id.Registry {
-	case "docker.io":
-		infoFunc = docker.DockerLikeImageInfo("https://registry.hub.docker.com/v2/repositories")
-	case "ghcr.io":
+	case docker.Registry:
+		infoFunc = docker.DockerLikeImageInfo(docker.BaseUrl, docker.AuthUrl)
+	case ghcr.Registry:
 		ghu := viper.GetString("github_user")
 		ghp := viper.GetString("github_token")
-		infoFunc = ghcr.GHCRLikeImageInfo("https://ghcr.io/v2", ghu, ghp)
-	case "quay.io":
+		infoFunc = ghcr.GHCRLikeImageInfo(ghcr.BaseUrl, ghu, ghp)
+	case quay.Registry:
 		infoFunc = quay.QuayLikeImageInfo("https://quay.io/api/v1/repository")
-	case "gcr.io", "k8s.gcr.io":
+	case gcr.Registry, "k8s.gcr.io":
 		infoFunc = gcr.GCRLikeImageInfo("https://" + id.Registry + "/v2")
 	}
 
