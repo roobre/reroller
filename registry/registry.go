@@ -26,9 +26,7 @@ func ImageDigests(image string) ([]string, error) {
 		infoFunc = ghcr.GHCRLikeImageInfo("https://ghcr.io/v2", ghu, ghp)
 	case "quay.io":
 		infoFunc = quay.QuayLikeImageInfo("https://quay.io/api/v1/repository")
-	case "gcr.io":
-		fallthrough
-	case "k8s.gcr.io":
+	case "gcr.io", "k8s.gcr.io":
 		infoFunc = gcr.GCRLikeImageInfo("https://" + id.Registry + "/v2")
 	}
 
