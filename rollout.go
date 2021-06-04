@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const restartedAtAnnotation = "kubectl.kubernetes.io/restartedAt"
+const restartedAtAnnotation = "reroller.roob.re/restartedAt"
 
 type Rollout interface {
 	Name() string
