@@ -18,7 +18,7 @@ func main() {
 	pflag.Bool("dry-run", false, "do not actually reroll anything")
 	pflag.String("log-level", "info", "log level (verbosity)")
 	pflag.Duration("interval", 0, "run every [interval], empty to run one. time.ParseDuration format")
-	pflag.Duration("cooldown", time.Hour, "do not re-deploy more often than this. time.ParseDuration format")
+	pflag.Duration("cooldown", 48*time.Hour, "do not re-deploy more often than this. time.ParseDuration format")
 	pflag.Parse()
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
