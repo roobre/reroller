@@ -185,6 +185,7 @@ func (rr *Reroller) shouldReroll(annotations map[string]string) bool {
 }
 
 func (rr *Reroller) hasUpdate(statuses []v1.ContainerStatus) bool {
+	// Iterate over all containers in all the pods of the rollout
 	for _, status := range statuses {
 		imagePieces := strings.Split(status.ImageID, "@")
 		if len(imagePieces) < 2 {
@@ -199,17 +200,17 @@ func (rr *Reroller) hasUpdate(statuses []v1.ContainerStatus) bool {
 			continue
 		}
 
+		found := false
 		for _, ud := range upstreamDigests {
-			found := false
 			if digest == ud {
 				found = true
 				break
 			}
+		}
 
-			if !found {
-				log.Tracef("%s not found un upstream manifest list %v", digest, upstreamDigests)
-				return true
-			}
+		if !found {
+			log.Tracef("%s not found un upstream manifest list %v", digest, upstreamDigests)
+			return true
 		}
 
 		log.Debugf("No new digest found for %s", status.Image)
