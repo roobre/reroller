@@ -19,7 +19,7 @@ func GHCRLikeImageInfo(baseUrl, user, password string) func(image, tag string) (
 		if err != nil {
 			log.Errorf("error building request: %v", err)
 		}
-		log.Debugf("querying ghcr as %s", user)
+		log.Debugf("querying ghcr as user '%s'", user)
 		req.SetBasicAuth(user, password)
 
 		resp, err := http.DefaultClient.Do(req)
