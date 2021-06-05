@@ -2,7 +2,6 @@ package registry
 
 import (
 	"errors"
-	"github.com/spf13/viper"
 	"roob.re/reroller/registry/docker"
 	"roob.re/reroller/registry/gcr"
 	"roob.re/reroller/registry/ghcr"
@@ -19,11 +18,9 @@ func ImageDigests(image string) ([]string, error) {
 
 	switch id.Registry {
 	case docker.Registry:
-		infoFunc = docker.DockerLikeImageInfo(docker.BaseUrl, docker.AuthUrl)
+		infoFunc = docker.DockerLikeImageInfo(docker.BaseUrl)
 	case ghcr.Registry:
-		ghu := viper.GetString("github_user")
-		ghp := viper.GetString("github_token")
-		infoFunc = ghcr.GHCRLikeImageInfo(ghcr.BaseUrl, ghu, ghp)
+		infoFunc = ghcr.GHCRLikeImageInfo(ghcr.BaseUrl)
 	case quay.Registry:
 		infoFunc = quay.QuayLikeImageInfo("https://quay.io/api/v1/repository")
 	case gcr.Registry, "k8s.gcr.io":

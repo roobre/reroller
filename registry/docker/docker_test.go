@@ -7,7 +7,7 @@ import (
 )
 
 func Test_Dockerhub(t *testing.T) {
-	infofunc := docker.DockerLikeImageInfo(docker.BaseUrl, docker.AuthUrl)
+	infofunc := docker.DockerLikeImageInfo(docker.BaseUrl)
 
 	info, err := infofunc("bitnami/nginx", "latest")
 	if err != nil {
