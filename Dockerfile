@@ -1,11 +1,17 @@
 FROM golang:alpine as builder
 
-COPY . src
-RUN cd src && CGO_ENABLED=0 go build -o /reroller ./cmd
+WORKDIR /src
+ENV CGO_ENABLED=0
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . ./
+RUN go build -v -o /reroller ./cmd
 
 FROM alpine:latest
 
 RUN apk add tini
-COPY --from=builder /reroller /usr/bin/
+COPY --from=builder /reroller /usr/local/bin/reroller
 
-ENTRYPOINT ["/sbin/tini", "--", "/usr/bin/reroller"]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/reroller"]
