@@ -73,10 +73,10 @@ func (rr *Reroller) Run() {
 	rollouts = append(rollouts, rr.deploymentRollouts()...)
 	rollouts = append(rollouts, rr.daemonSetRollouts()...)
 
-	log.Debugf("%d rollouts to check in ns [%s]", len(rollouts), strings.Join(rr.Namespaces, ", "))
+	log.Infof("found %d rollouts to check in ns [%s]", len(rollouts), strings.Join(rr.Namespaces, ", "))
 
 	for _, rollout := range rollouts {
-		log.Tracef("considering %s", rollout.Name())
+		log.Debugf("considering %s", rollout.Name())
 		if !rr.shouldReroll(rollout.Annotations()) {
 			log.Debugf("%s is not annotated, skipping", rollout.Name())
 			continue
@@ -93,15 +93,16 @@ func (rr *Reroller) Run() {
 			continue
 		}
 
+		log.Infof("checking updates for %d containers in %s", len(statuses), rollout.Name())
 		if rr.hasUpdate(statuses) {
-			log.Println("Restarting " + rollout.Name())
+			log.Infof("Restarting " + rollout.Name())
 
 			if rr.DryRun {
-				log.Println("dry-run: not actually restarting")
+				log.Warnf("dry-run: not actually restarting")
 				continue
 			}
 
-			err := rollout.Restart()
+			err = rollout.Restart()
 			if err != nil {
 				log.Errorf("error restarting %s: %v", rollout.Name(), err)
 			}
@@ -114,7 +115,7 @@ func (rr *Reroller) deploymentRollouts() (rollouts []Rollout) {
 	for _, ns := range rr.Namespaces {
 		deployments, err := rr.K8S.AppsV1().Deployments(ns).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
-			log.Errorf(err.Error())
+			log.Errorf("error getting deployments in %s: %v", ns, err.Error())
 			return
 		}
 
@@ -133,12 +134,12 @@ func (rr *Reroller) daemonSetRollouts() (rollouts []Rollout) {
 	for _, ns := range rr.Namespaces {
 		daemonSets, err := rr.K8S.AppsV1().DaemonSets(ns).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
-			log.Errorf(err.Error())
+			log.Errorf("error getting daemonSets in %s: %v", ns, err.Error())
 			return
 		}
 
 		for _, ds := range daemonSets.Items {
-			if true {
+			if ds.Status.NumberAvailable > 0 {
 				rollouts = append(rollouts, DaemonSetRollout(rr.K8S, ds.DeepCopy()))
 			}
 		}
