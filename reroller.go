@@ -19,7 +19,7 @@ const rerollerAnnotation = "reroller.roob.re/reroll"
 
 type Reroller struct {
 	K8S         *kubernetes.Clientset
-	Namespace   string
+	Namespaces  []string
 	Unannotated bool
 	DryRun      bool
 	Cooldown    time.Duration
@@ -73,7 +73,7 @@ func (rr *Reroller) Run() {
 	rollouts = append(rollouts, rr.deploymentRollouts()...)
 	rollouts = append(rollouts, rr.daemonSetRollouts()...)
 
-	log.Debugf("%d rollouts to check in ns %s", len(rollouts), rr.Namespace)
+	log.Debugf("%d rollouts to check in ns [%s]", len(rollouts), strings.Join(rr.Namespaces, ", "))
 
 	for _, rollout := range rollouts {
 		log.Tracef("considering %s", rollout.Name())
@@ -110,16 +110,18 @@ func (rr *Reroller) Run() {
 }
 
 func (rr *Reroller) deploymentRollouts() (rollouts []Rollout) {
-	log.Debugf("Fetching deployments in ns %s", rr.Namespace)
-	deployments, err := rr.K8S.AppsV1().Deployments(rr.Namespace).List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		log.Errorf(err.Error())
-		return
-	}
+	log.Debugf("Fetching deployments in ns %s", rr.Namespaces)
+	for _, ns := range rr.Namespaces {
+		deployments, err := rr.K8S.AppsV1().Deployments(ns).List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			log.Errorf(err.Error())
+			return
+		}
 
-	for _, depl := range deployments.Items {
-		if depl.Status.AvailableReplicas > 0 {
-			rollouts = append(rollouts, DeploymentRollout(rr.K8S, depl.DeepCopy()))
+		for _, depl := range deployments.Items {
+			if depl.Status.AvailableReplicas > 0 {
+				rollouts = append(rollouts, DeploymentRollout(rr.K8S, depl.DeepCopy()))
+			}
 		}
 	}
 
@@ -127,16 +129,18 @@ func (rr *Reroller) deploymentRollouts() (rollouts []Rollout) {
 }
 
 func (rr *Reroller) daemonSetRollouts() (rollouts []Rollout) {
-	log.Debugf("Fetching daemonSets in ns %s", rr.Namespace)
-	daemonSets, err := rr.K8S.AppsV1().DaemonSets(rr.Namespace).List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		log.Errorf(err.Error())
-		return
-	}
+	log.Debugf("Fetching daemonSets in ns %s", rr.Namespaces)
+	for _, ns := range rr.Namespaces {
+		daemonSets, err := rr.K8S.AppsV1().DaemonSets(ns).List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			log.Errorf(err.Error())
+			return
+		}
 
-	for _, ds := range daemonSets.Items {
-		if true {
-			rollouts = append(rollouts, DaemonSetRollout(rr.K8S, ds.DeepCopy()))
+		for _, ds := range daemonSets.Items {
+			if true {
+				rollouts = append(rollouts, DaemonSetRollout(rr.K8S, ds.DeepCopy()))
+			}
 		}
 	}
 

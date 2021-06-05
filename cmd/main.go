@@ -13,7 +13,7 @@ import (
 
 func main() {
 	pflag.String("kubeconfig", path.Join(os.ExpandEnv("$HOME"), ".kube", "config"), "path to kubeconfig")
-	pflag.String("namespace", "", "namespaces to query (comma-separated)")
+	pflag.String("namespaces", "", "namespaces to query (comma-separated)")
 	pflag.Bool("unannotated", false, "process unannotated rollouts")
 	pflag.Bool("dry-run", false, "do not actually reroll anything")
 	pflag.String("log-level", "info", "log level (verbosity)")
@@ -36,7 +36,7 @@ func main() {
 		log.Fatal(err)
 	}
 	rr.Unannotated = viper.GetBool("unannotated")
-	rr.Namespace = viper.GetString("namespace")
+	rr.Namespaces = strings.Split(viper.GetString("namespaces"), ",")
 	rr.DryRun = viper.GetBool("dry-run")
 	rr.Cooldown = viper.GetDuration("cooldown")
 
