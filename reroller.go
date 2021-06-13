@@ -18,12 +18,18 @@ import (
 const rerollerAnnotation = "reroller.roob.re/reroll"
 
 type Reroller struct {
-	K8S         *kubernetes.Clientset
+	K8S      *kubernetes.Clientset
+	Registry func(image string) ([]string, error)
+	Config
+}
+
+type Config struct {
 	Namespaces  []string
 	Unannotated bool
 	DryRun      bool
 	Cooldown    time.Duration
-	Registry    func(image string) ([]string, error)
+	Interval    time.Duration
+	Schedule    Schedule
 }
 
 func restConfig(kubeconfig string) (*rest.Config, error) {
@@ -44,13 +50,14 @@ func restConfig(kubeconfig string) (*rest.Config, error) {
 	return nil, err
 }
 
-func New() (*Reroller, error) {
-	return NewWithKubeconfig("")
+func New(c Config) (*Reroller, error) {
+	return NewWithKubeconfig("", c)
 }
 
-func NewWithKubeconfig(kubeconfig string) (*Reroller, error) {
+func NewWithKubeconfig(kubeconfig string, c Config) (*Reroller, error) {
 	rr := &Reroller{
 		Registry: registry.ImageDigests,
+		Config:   c,
 	}
 
 	// creates the in-cluster config
@@ -69,6 +76,23 @@ func NewWithKubeconfig(kubeconfig string) (*Reroller, error) {
 }
 
 func (rr *Reroller) Run() {
+	if rr.Interval == 0 {
+		rr.RunOnce()
+		return
+	}
+
+	for {
+		if rr.Schedule.ShouldRunNow() {
+			rr.RunOnce()
+		} else {
+			log.Debugf("Skipping check since %v is not between the schedule", time.Now())
+		}
+
+		time.Sleep(rr.Interval)
+	}
+}
+
+func (rr *Reroller) RunOnce() {
 	var rollouts []Rollout
 	rollouts = append(rollouts, rr.deploymentRollouts()...)
 	rollouts = append(rollouts, rr.daemonSetRollouts()...)

@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+const hourFmt = "15:04"
+
 func main() {
 	pflag.String("kubeconfig", path.Join(os.ExpandEnv("$HOME"), ".kube", "config"), "path to kubeconfig")
 	pflag.String("namespaces", "", "namespaces to query (comma-separated)")
@@ -19,6 +21,8 @@ func main() {
 	pflag.String("log-level", "info", "log level (verbosity)")
 	pflag.Duration("interval", 0, "run every [interval], empty to run one. time.ParseDuration format")
 	pflag.Duration("cooldown", 48*time.Hour, "do not re-deploy more often than this. time.ParseDuration format")
+	pflag.String("after", "00:00", "re-deploy only after this hour (e.g. 23:00)")
+	pflag.String("before", "00:00", "re-deploy only before this hour (e.g. 03:00)")
 	pflag.Parse()
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
@@ -31,23 +35,31 @@ func main() {
 	lvl, _ := log.ParseLevel(viper.GetString("log-level"))
 	log.SetLevel(lvl)
 
-	rr, err := reroller.NewWithKubeconfig(viper.GetString("kubeconfig"))
+	after, err := time.Parse(hourFmt, viper.GetString("after"))
+	if err != nil {
+		log.Fatalf("Error parsing --after: %v", err)
+	}
+	before, err := time.Parse(hourFmt, viper.GetString("before"))
+	if err != nil {
+		log.Fatalf("Error parsing --before: %v", err)
+	}
+
+	c := reroller.Config{
+		Namespaces:  strings.Split(viper.GetString("namespaces"), ","),
+		Unannotated: viper.GetBool("unannotated"),
+		DryRun:      viper.GetBool("dry-run"),
+		Cooldown:    viper.GetDuration("cooldown"),
+		Interval:    viper.GetDuration("interval"),
+		Schedule: reroller.Schedule{
+			After:  after,
+			Before: before,
+		},
+	}
+
+	rr, err := reroller.NewWithKubeconfig(viper.GetString("kubeconfig"), c)
 	if err != nil {
 		log.Fatal(err)
 	}
-	rr.Unannotated = viper.GetBool("unannotated")
-	rr.Namespaces = strings.Split(viper.GetString("namespaces"), ",")
-	rr.DryRun = viper.GetBool("dry-run")
-	rr.Cooldown = viper.GetDuration("cooldown")
 
-	interval := viper.GetDuration("interval")
-	if interval == 0 {
-		rr.Run()
-		return
-	}
-
-	for {
-		rr.Run()
-		time.Sleep(interval)
-	}
+	rr.Run()
 }
