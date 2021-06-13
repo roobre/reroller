@@ -1,4 +1,4 @@
-# reroller
+# 🧻 reroller
 
 Reroller is a tool that monitors deployments and daemonSets in kubernetes clusters for updates in the container images they use, and rolls an update whenever it's found.
 
